@@ -1,6 +1,26 @@
 import os
 
-DASHBOARD_BASE = "https://nwsgbnoti.blizapps.com"
+
+def _load_dotenv(env_path):
+    if not os.path.exists(env_path):
+        return
+    with open(env_path, "r", encoding="utf-8") as env_file:
+        for raw_line in env_file:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, value)
+
+
+_load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+
+DASHBOARD_BASE = os.environ.get("DASHBOARD_BASE", "") 
 GB_LOGIN_PATH = "/manage/"
 GB_PUSH_SEND_PATH = "/manage/users/push/send/"
 GB_PUSH_HISTORY_PATH = "/manage/users/push/history/"

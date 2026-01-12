@@ -7,5 +7,6 @@ env/
 .env
 *.pkl
 *.sqlite
+*.sqlite3
 *.db
 *sample_code
