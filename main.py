@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from app.cli import main
+from app.service import main
 
 
 if __name__ == "__main__":

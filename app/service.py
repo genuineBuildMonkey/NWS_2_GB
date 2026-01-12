@@ -128,3 +128,4 @@ def main():
                 print(f"[{now_utc()}] {state}: error: {e}")
 
         time.sleep(POLL_INTERVAL)
+
