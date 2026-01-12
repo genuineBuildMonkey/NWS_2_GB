@@ -8,3 +8,4 @@ env/
 *.pkl
 *.sqlite
 *.db
+*sample_code

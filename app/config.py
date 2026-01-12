@@ -13,8 +13,10 @@ GB_PASSWORD = os.environ.get("GB_PASSWORD", "")
 # Cookie cache file (so you don't log in every loop)
 COOKIE_JAR_FILE = "goodbarber_cookies.pkl"
 
+# Persist alert IDs to avoid duplicate notifications across runs.
+SEEN_ALERTS_DB = "nws_alerts_seen.sqlite3"
+
 # NWS polling
-STATES = ["WY", "NM", "FL"]
 POLL_INTERVAL = 60  # call every this many seconds
 
 # Polygon simplification
