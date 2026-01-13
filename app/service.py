@@ -61,6 +61,7 @@ def main():
     nws = requests.Session()
     gb = requests.Session()
     conn = sqlite3.connect(SEEN_ALERTS_DB)
+    gb_requests = 0
 
     load_cookies(gb, COOKIE_JAR_FILE)
     db_init(conn)
@@ -112,6 +113,12 @@ def main():
                         continue
                     headline = props.get("headline") or ""
                     aid = props.get("id") or f.get("id") or ""
+                    geom = f.get("geometry") or {}
+                    affected = props.get("affectedZones") or []
+                    if geom.get("type") not in ("Polygon", "MultiPolygon") and not affected:
+                        print(f"  new: {event} | {headline}")
+                        print("    no geometry available (alert.geometry absent; no affectedZone polygons)")
+                        continue
 
                     sources, geoms = choose_geometries_for_alert(nws, f)
                     if not geoms:
@@ -142,6 +149,9 @@ def main():
 
                     time.sleep(random.uniform(2.5, 3))
                     ok, resp = gb_send_push(gb, msg, zones_obj)
+                    gb_requests += 1
+                    if gb_requests % 24 == 0:
+                        time.sleep(random.uniform(60, 180))
                     if ok:
                         print(f"    GoodBarber: push queued (302 -> history) [alert id: {aid}]")
                         if aid:

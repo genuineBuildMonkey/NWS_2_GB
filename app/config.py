@@ -37,10 +37,13 @@ COOKIE_JAR_FILE = "goodbarber_cookies.pkl"
 SEEN_ALERTS_DB = "nws_alerts_seen.sqlite3"
 
 # NWS polling
-POLL_INTERVAL = 60  # call every this many seconds
+POLL_INTERVAL = 30  # call every this many seconds
 IGNORED_EVENTS = [
     "Small Craft Advisory",
     "Special Marine Warning",
+    "Air Stagnation Advisory",
+    "Beach Hazards Statement",
+    "Civil Emergency Message",
 ]
 
 # Polygon simplification
