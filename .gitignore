@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+.env
+*.pkl
+*.sqlite
+*.sqlite3
+*.db
+*sample_code
