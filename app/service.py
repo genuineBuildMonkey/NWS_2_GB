@@ -118,12 +118,16 @@ def main():
                     if geom.get("type") not in ("Polygon", "MultiPolygon") and not affected:
                         print(f"  new: {event} | {headline}")
                         print("    no geometry available (alert.geometry absent; no affectedZone polygons)")
+                        if aid:
+                            db_mark_seen(conn, aid)
                         continue
 
                     sources, geoms = choose_geometries_for_alert(nws, f)
                     if not geoms:
                         print(f"  new: {event} | {headline}")
                         print("    no geometry available (alert.geometry absent; no affectedZone polygons)")
+                        if aid:
+                            db_mark_seen(conn, aid)
                         continue
 
                     shapely_geoms = [geojson_to_shapely(g) for g in geoms]
