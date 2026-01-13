@@ -157,7 +157,7 @@ def gb_get_push_hidden_inputs(session: requests.Session) -> GBHiddenInputs:
 def gb_send_push(session: requests.Session, message: str, zones_payload_obj):
     """
     zones_payload_obj: Python object shaped like [[{lat,lng}...], ...]
-    Returns True on success (302 to history), else False.
+    Returns (ok, resp) where ok=True means 302 to history.
     """
     hidden = gb_get_push_hidden_inputs(session).values
 
@@ -202,5 +202,5 @@ def gb_send_push(session: requests.Session, message: str, zones_payload_obj):
 
     if resp.status_code in (301, 302):
         loc = resp.headers.get("Location", "")
-        return loc.startswith(GB_PUSH_HISTORY_PATH)
-    return False
+        return loc.startswith(GB_PUSH_HISTORY_PATH), resp
+    return False, resp

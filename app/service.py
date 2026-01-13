@@ -74,14 +74,14 @@ def main():
     print("")
 
     while True:
-        try:
-            if not gb_is_logged_in(gb):
-                gb_login(gb)
-                save_cookies(gb, COOKIE_JAR_FILE)
-        except Exception as e:
-            print(f"[{now_utc()}] GoodBarber auth error: {e}")
-            time.sleep(POLL_INTERVAL)
-            continue
+        #try:
+            #if not gb_is_logged_in(gb):
+                #gb_login(gb)
+                #save_cookies(gb, COOKIE_JAR_FILE)
+        #except Exception as e:
+            #print(f"[{now_utc()}] GoodBarber auth error: {e}")
+            #time.sleep(POLL_INTERVAL)
+            #continue
 
         try:
             for page_idx, data, url in iter_active_alert_pages(nws, NWS_ALERTS_URL):
@@ -133,13 +133,22 @@ def main():
                     print(f"    union type: {union_type}")
                     print(f"    zones/rings emitted: {len(zones_obj)}")
 
-                    ok = gb_send_push(gb, msg, zones_obj)
+                    ok, resp = gb_send_push(gb, msg, zones_obj)
                     if ok:
                         print(f"    GoodBarber: push queued (302 -> history) [alert id: {aid}]")
                         if aid:
                             db_mark_seen(conn, aid)
                     else:
                         print(f"    GoodBarber: push send failed (no 302->history) [alert id: {aid}]")
+                        status = resp.status_code if resp is not None else "unknown"
+                        location = resp.headers.get("Location", "") if resp is not None else ""
+                        body = (resp.text or "") if resp is not None else ""
+                        body = body.replace("\n", " ").strip()
+                        if len(body) > 500:
+                            body = body[:497] + "..."
+                        print(f"    GoodBarber response: status={status} location='{location}'")
+                        if body:
+                            print(f"    GoodBarber body: {body}")
 
                     print("")
         except Exception as e:

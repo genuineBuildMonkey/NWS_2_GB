@@ -40,9 +40,9 @@ SEEN_ALERTS_DB = "nws_alerts_seen.sqlite3"
 POLL_INTERVAL = 60  # call every this many seconds
 
 # Polygon simplification
-MAX_POINTS = 20
-PREFERRED_POINTS = 8
-SIMPLIFY_ENABLED = False
+MAX_POINTS = 300
+PREFERRED_POINTS = 250
+SIMPLIFY_ENABLED = True
 SIMPLIFY_TOLERANCE = 0.001
 
 # NWS API
