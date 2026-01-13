@@ -1,3 +1,4 @@
+import random
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ from app.config import (
     SEEN_ALERTS_DB,
     SIMPLIFY_ENABLED,
     SIMPLIFY_TOLERANCE,
+    IGNORED_EVENTS,
 )
 from app.gb_client import gb_is_logged_in, gb_login, gb_send_push, load_cookies, save_cookies
 from app.geometry import geojson_to_shapely, shapely_to_goodbarber_zones, union_geometries
@@ -63,8 +65,6 @@ def main():
     load_cookies(gb, COOKIE_JAR_FILE)
     db_init(conn)
 
-    ignored_events = {"Small Craft Advisory", "Special Marine Warning"}
-
     print(f"[{now_utc()}] Starting NWS->GoodBarber poller")
     print(f"Scope: nationwide, interval: {POLL_INTERVAL}s")
     print(f"Seen-alerts DB: {SEEN_ALERTS_DB}")
@@ -106,7 +106,7 @@ def main():
                     props = f.get("properties", {})
                     event = props.get("event") or "Alert"
                     message_type = props.get("messageType") or ""
-                    if event in ignored_events:
+                    if event in IGNORED_EVENTS:
                         continue
                     if message_type != "Alert":
                         continue
@@ -140,6 +140,7 @@ def main():
                     print(f"    union type: {union_type}")
                     print(f"    zones/rings emitted: {len(zones_obj)}")
 
+                    time.sleep(random.uniform(2.5, 3))
                     ok, resp = gb_send_push(gb, msg, zones_obj)
                     if ok:
                         print(f"    GoodBarber: push queued (302 -> history) [alert id: {aid}]")

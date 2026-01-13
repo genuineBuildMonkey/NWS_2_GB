@@ -1,6 +1,8 @@
 import json
 import pickle
+import random
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -192,13 +194,24 @@ def gb_send_push(session: requests.Session, message: str, zones_payload_obj):
     headers = dict(GB_HEADERS_BASE)
     headers["Referer"] = abs_url(GB_PUSH_SEND_PATH)
 
-    resp = session.post(
-        abs_url(GB_PUSH_SEND_PATH),
-        headers=headers,
-        data=payload,
-        timeout=25,
-        allow_redirects=False,
-    )
+    resp = None
+    for attempt in range(4):
+        try:
+            resp = session.post(
+                abs_url(GB_PUSH_SEND_PATH),
+                headers=headers,
+                data=payload,
+                timeout=(5, 15),
+                allow_redirects=False,
+            )
+            break
+        except requests.exceptions.Timeout:
+            sleep_for = (2 ** (attempt + 1)) + random.uniform(1.0, 2.0)
+            time.sleep(sleep_for)
+            continue
+
+    if resp is None:
+        return False, None
 
     if resp.status_code in (301, 302):
         loc = resp.headers.get("Location", "")

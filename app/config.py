@@ -38,6 +38,10 @@ SEEN_ALERTS_DB = "nws_alerts_seen.sqlite3"
 
 # NWS polling
 POLL_INTERVAL = 60  # call every this many seconds
+IGNORED_EVENTS = [
+    "Small Craft Advisory",
+    "Special Marine Warning",
+]
 
 # Polygon simplification
 MAX_POINTS = 300
