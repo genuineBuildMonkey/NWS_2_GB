@@ -63,6 +63,8 @@ def main():
     load_cookies(gb, COOKIE_JAR_FILE)
     db_init(conn)
 
+    ignored_events = {"Small Craft Advisory", "Special Marine Warning"}
+
     print(f"[{now_utc()}] Starting NWS->GoodBarber poller")
     print(f"Scope: nationwide, interval: {POLL_INTERVAL}s")
     print(f"Seen-alerts DB: {SEEN_ALERTS_DB}")
@@ -103,6 +105,11 @@ def main():
                 for f in new_features:
                     props = f.get("properties", {})
                     event = props.get("event") or "Alert"
+                    message_type = props.get("messageType") or ""
+                    if event in ignored_events:
+                        continue
+                    if message_type != "Alert":
+                        continue
                     headline = props.get("headline") or ""
                     aid = props.get("id") or f.get("id") or ""
 
