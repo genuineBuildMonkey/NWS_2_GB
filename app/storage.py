@@ -39,3 +39,12 @@ def db_mark_seen(conn: sqlite3.Connection, alert_id: str) -> None:
         (alert_id, ts, ts),
     )
     conn.commit()
+
+
+def db_prune_seen_before(conn: sqlite3.Connection, cutoff_iso: str) -> int:
+    cursor = conn.execute(
+        "DELETE FROM seen_alerts WHERE last_seen_at < ?",
+        (cutoff_iso,),
+    )
+    conn.commit()
+    return cursor.rowcount if cursor.rowcount is not None else 0

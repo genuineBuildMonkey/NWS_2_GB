@@ -37,12 +37,22 @@ COOKIE_JAR_FILE = "goodbarber_cookies.pkl"
 SEEN_ALERTS_DB = "nws_alerts_seen.sqlite3"
 
 # NWS polling
-POLL_INTERVAL = 60  # call every this many seconds
+POLL_INTERVAL = 30  # call every this many seconds
+IGNORED_EVENTS = [
+    "Small Craft Advisory",
+    "Special Marine Warning",
+    "Air Stagnation Advisory",
+    "Air Quality Alert",
+    "Beach Hazards Statement",
+    "Civil Emergency Message",
+    "Low Water Advisory",
+    "Test Message",
+]
 
 # Polygon simplification
-MAX_POINTS = 20
-PREFERRED_POINTS = 8
-SIMPLIFY_ENABLED = False
+MAX_POINTS = 300
+PREFERRED_POINTS = 250
+SIMPLIFY_ENABLED = True
 SIMPLIFY_TOLERANCE = 0.001
 
 # NWS API

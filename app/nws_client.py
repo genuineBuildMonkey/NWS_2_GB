@@ -57,6 +57,7 @@ def choose_geometries_for_alert(session, alert_feature):
     if alert_geoms:
         sources.extend(["alert.geometry"] * len(alert_geoms))
         geoms.extend(alert_geoms)
+        return sources, geoms
 
     props = alert_feature.get("properties") or {}
     affected = props.get("affectedZones") or []
