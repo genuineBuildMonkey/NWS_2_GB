@@ -3,7 +3,7 @@ import os
 import random
 import sqlite3
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
 import requests
@@ -22,11 +22,14 @@ from app.config import (
 from app.gb_client import gb_is_logged_in, gb_login, gb_send_push, load_cookies, save_cookies
 from app.geometry import geojson_to_shapely, shapely_to_goodbarber_zones, union_geometries
 from app.nws_client import fetch_json, choose_geometries_for_alert
-from app.storage import db_init, db_mark_seen, db_seen
+from app.storage import db_init, db_mark_seen, db_prune_seen_before, db_seen
+
+
+LOG_DIR = "logs"
 
 
 def setup_logging():
-    log_dir = "logs"
+    log_dir = LOG_DIR
     os.makedirs(log_dir, exist_ok=True)
     date_tag = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     log_path = os.path.join(log_dir, f"nws_goodbarber_{date_tag}.log")
@@ -55,6 +58,30 @@ def _format_union_type(union_geom):
     if union_geom is None:
         return "none"
     return union_geom.geom_type
+
+
+def prune_logs_before(log_dir: str, cutoff_ts: float) -> int:
+    try:
+        entries = os.listdir(log_dir)
+    except FileNotFoundError:
+        return 0
+
+    removed = 0
+    for name in entries:
+        path = os.path.join(log_dir, name)
+        try:
+            stat = os.stat(path)
+        except FileNotFoundError:
+            continue
+        if not os.path.isfile(path):
+            continue
+        if stat.st_mtime < cutoff_ts:
+            try:
+                os.remove(path)
+                removed += 1
+            except OSError:
+                continue
+    return removed
 
 
 def iter_active_alert_pages(session, start_url):
@@ -101,7 +128,28 @@ def main():
         logger.info("Polygon simplify: disabled")
     logger.info("Dashboard: %s", DASHBOARD_BASE)
 
+    last_prune_key = None
     while True:
+        now = datetime.now(timezone.utc)
+        if now.day == 1:
+            prune_key = (now.year, now.month)
+            if prune_key != last_prune_key:
+                cutoff = now - timedelta(days=30)
+                cutoff_iso = cutoff.isoformat(timespec="seconds")
+                pruned_db = db_prune_seen_before(conn, cutoff_iso)
+                pruned_logs = prune_logs_before(LOG_DIR, cutoff.timestamp())
+                logger.info(
+                    "Monthly prune: removed %s seen alerts older than %s",
+                    pruned_db,
+                    cutoff_iso,
+                )
+                logger.info(
+                    "Monthly prune: removed %s log files older than %s",
+                    pruned_logs,
+                    cutoff.date().isoformat(),
+                )
+                last_prune_key = prune_key
+
         try:
             if not gb_is_logged_in(gb):
                 gb_login(gb)
