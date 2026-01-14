@@ -29,15 +29,26 @@ def db_seen(conn: sqlite3.Connection, alert_id: str) -> bool:
 
 def db_mark_seen(conn: sqlite3.Connection, alert_id: str) -> None:
     ts = now_utc()
+
+    # 1) Insert if new
     conn.execute(
         """
-        INSERT INTO seen_alerts(alert_id, first_seen_at, last_seen_at)
+        INSERT OR IGNORE INTO seen_alerts(alert_id, first_seen_at, last_seen_at)
         VALUES (?, ?, ?)
-        ON CONFLICT(alert_id) DO UPDATE SET
-            last_seen_at=excluded.last_seen_at
         """,
         (alert_id, ts, ts),
     )
+
+    # 2) Always refresh last_seen_at (for existing rows this updates; for new rows it matches)
+    conn.execute(
+        """
+        UPDATE seen_alerts
+        SET last_seen_at = ?
+        WHERE alert_id = ?
+        """,
+        (ts, alert_id),
+    )
+
     conn.commit()
 
 
