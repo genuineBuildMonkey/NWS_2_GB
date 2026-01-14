@@ -1,4 +1,5 @@
 import json
+import logging
 import pickle
 import random
 import re
@@ -17,6 +18,8 @@ from app.config import (
     GB_PUSH_HISTORY_PATH,
     GB_PUSH_SEND_PATH,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -161,7 +164,11 @@ def gb_send_push(session: requests.Session, message: str, zones_payload_obj):
     zones_payload_obj: Python object shaped like [[{lat,lng}...], ...]
     Returns (ok, resp) where ok=True means 302 to history.
     """
-    hidden = gb_get_push_hidden_inputs(session).values
+    try:
+        hidden = gb_get_push_hidden_inputs(session).values
+    except Exception:
+        logger.exception("GoodBarber push: failed to load hidden inputs")
+        raise
 
     picker_date, iso_date, heure, hh, mm = today_strings_local()
 
@@ -207,13 +214,34 @@ def gb_send_push(session: requests.Session, message: str, zones_payload_obj):
             break
         except requests.exceptions.Timeout:
             sleep_for = (2 ** (attempt + 1)) + random.uniform(1.0, 2.0)
+            logger.error(
+                "GoodBarber push: timeout on attempt %s; retrying in %.1fs",
+                attempt + 1,
+                sleep_for,
+            )
             time.sleep(sleep_for)
             continue
 
     if resp is None:
+        logger.error("GoodBarber push: exhausted retries without response")
         return False, None
 
     if resp.status_code in (301, 302):
         loc = resp.headers.get("Location", "")
+        if not loc.startswith(GB_PUSH_HISTORY_PATH):
+            logger.error(
+                "GoodBarber push: unexpected redirect status=%s location=%s",
+                resp.status_code,
+                loc,
+            )
         return loc.startswith(GB_PUSH_HISTORY_PATH), resp
+    body = (resp.text or "").replace("\n", " ").strip()
+    if len(body) > 300:
+        body = body[:297] + "..."
+    logger.error(
+        "GoodBarber push: unexpected status=%s location=%s body=%s",
+        resp.status_code,
+        resp.headers.get("Location", ""),
+        body,
+    )
     return False, resp

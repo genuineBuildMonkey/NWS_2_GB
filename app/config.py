@@ -42,8 +42,10 @@ IGNORED_EVENTS = [
     "Small Craft Advisory",
     "Special Marine Warning",
     "Air Stagnation Advisory",
+    "Air Quality Alert",
     "Beach Hazards Statement",
     "Civil Emergency Message",
+    "Test Message",
 ]
 
 # Polygon simplification
