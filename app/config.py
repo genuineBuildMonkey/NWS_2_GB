@@ -45,6 +45,7 @@ IGNORED_EVENTS = [
     "Air Quality Alert",
     "Beach Hazards Statement",
     "Civil Emergency Message",
+    "Low Water Advisory",
     "Test Message",
 ]
 
