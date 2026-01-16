@@ -88,13 +88,15 @@ def iter_active_alert_pages(session, start_url):
     page = 0
     url = start_url
     seen_urls = set()
+    params = {"region_type": "land", "message_type": "alert"}
 
     while True:
         if url in seen_urls:
             return
         seen_urls.add(url)
 
-        data, _, _ = fetch_json(session, url, headers=NWS_HEADERS)
+        query_params = params if page == 0 else None
+        data, _, _ = fetch_json(session, url, headers=NWS_HEADERS, params=query_params)
         if not data:
             return
 
@@ -185,9 +187,12 @@ def main():
                     props = f.get("properties", {})
                     event = props.get("event") or "Alert"
                     message_type = props.get("messageType") or ""
+                    region_type = props.get("regionType") or props.get("region_type") or ""
                     if event in IGNORED_EVENTS:
                         continue
                     if message_type != "Alert":
+                        continue
+                    if region_type.lower() != "land":
                         continue
                     headline = props.get("headline") or ""
                     aid = props.get("id") or f.get("id") or ""
