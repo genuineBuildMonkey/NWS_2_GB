@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+import re
 import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
@@ -26,6 +27,35 @@ from app.storage import db_init, db_mark_seen, db_prune_seen_before, db_seen
 
 
 LOG_DIR = "logs"
+
+LONG_UNTIL = re.compile(
+    r"\buntil\s+(?P<month>[A-Za-z]+)\s+(?P<day>\d{1,2})\s+at\s+(?P<time>\d{1,2}:\d{2}\s*[AP]M)",
+    re.IGNORECASE,
+)
+NUM_UNTIL = re.compile(
+    r"\buntil\s+(?P<time>\d{1,2}:\d{2}\s*[AP]M)\s+(?P<month>\d{1,2})/(?P<day>\d{1,2})",
+    re.IGNORECASE,
+)
+MONTHS = {
+    m.lower(): i
+    for i, m in enumerate(
+        [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ],
+        1,
+    )
+}
 
 
 def setup_logging():
@@ -58,6 +88,60 @@ def _format_union_type(union_geom):
     if union_geom is None:
         return "none"
     return union_geom.geom_type
+
+
+def _clean_one_line(raw: str) -> str:
+    return " ".join((raw or "").strip().split())
+
+
+def _extract_title(s: str) -> str:
+    if ":" in s:
+        idx = s.find(":")
+        if idx != -1 and idx + 1 < len(s) and s[idx + 1] == " ":
+            return s[:idx].strip()
+    idx = s.lower().find(" issued")
+    return (s[:idx] if idx != -1 else s).strip()
+
+
+def _fmt_time(dt: datetime) -> str:
+    hour = dt.hour % 12 or 12
+    ampm = "AM" if dt.hour < 12 else "PM"
+    return f"{hour}:{dt.minute:02d} {ampm}"
+
+
+def format_nws_notification(raw: str, *, year_default: int | None = None) -> str:
+    s = _clean_one_line(raw)
+    title = _extract_title(s)
+    if year_default is None:
+        year_default = datetime.now().year
+
+    if " until " not in s.lower():
+        return f"⚠️  {title} issued. Tap for details!"
+
+    match = LONG_UNTIL.search(s)
+    if match:
+        month = MONTHS.get(match.group("month").lower())
+        day = int(match.group("day"))
+        t = datetime.strptime(match.group("time").replace(" ", "").upper(), "%I:%M%p").time()
+        if month is not None:
+            until_dt = datetime(year_default, month, day, t.hour, t.minute)
+            return (
+                f"⚠️  {title} issued until {_fmt_time(until_dt)} "
+                f"{until_dt.strftime('%A')}! Tap for details!"
+            )
+
+    match = NUM_UNTIL.search(s)
+    if match:
+        month = int(match.group("month"))
+        day = int(match.group("day"))
+        t = datetime.strptime(match.group("time").replace(" ", "").upper(), "%I:%M%p").time()
+        until_dt = datetime(year_default, month, day, t.hour, t.minute)
+        return (
+            f"⚠️  {title} issued until {_fmt_time(until_dt)} "
+            f"{until_dt.strftime('%A')}! Tap for details!"
+        )
+
+    return f"⚠️  {title} issued. Tap for details!"
 
 
 def prune_logs_before(log_dir: str, cutoff_ts: float) -> int:
@@ -192,8 +276,6 @@ def main():
                         continue
                     if message_type != "Alert":
                         continue
-                    if region_type.lower() != "land":
-                        continue
                     headline = props.get("headline") or ""
                     aid = props.get("id") or f.get("id") or ""
 
@@ -226,7 +308,8 @@ def main():
                         logger.info("    union type: %s", union_type)
                         continue
 
-                    msg = f"{event}: {headline}".strip()
+                    raw_msg = headline or event
+                    msg = format_nws_notification(raw_msg)
                     if len(msg) > 250:
                         msg = msg[:247] + "..."
 
@@ -235,7 +318,8 @@ def main():
                     logger.info("    union type: %s", union_type)
                     logger.info("    zones/rings emitted: %s", len(zones_obj))
 
-                    time.sleep(random.uniform(2.5, 3))
+                    time.sleep(random.uniform(1.5, 3))
+
                     ok, resp = gb_send_push(gb, msg, zones_obj)
                     gb_requests += 1
                     if gb_requests % 24 == 0:
