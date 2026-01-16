@@ -57,8 +57,9 @@ SIMPLIFY_TOLERANCE = 0.001
 
 # NWS API
 NWS_ALERTS_URL = "https://api.weather.gov/alerts/active"
+NWS_CONTACT = os.environ.get("NWS_CONTACT", "")
 NWS_HEADERS = {
-    "User-Agent": "nws-goodbarber-poc/0.1 (contact: you@example.com)",
+    "User-Agent": f"nws-goodbarber-poc/0.1 (contact: {NWS_CONTACT})",
     "Accept": "application/geo+json,application/json;q=0.9",
 }
 
