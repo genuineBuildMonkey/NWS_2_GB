@@ -90,11 +90,11 @@ def _format_union_type(union_geom):
     return union_geom.geom_type
 
 
-def _clean_one_line(raw: str) -> str:
+def _clean_one_line(raw):
     return " ".join((raw or "").strip().split())
 
 
-def _extract_title(s: str) -> str:
+def _extract_title(s):
     if ":" in s:
         idx = s.find(":")
         if idx != -1 and idx + 1 < len(s) and s[idx + 1] == " ":
@@ -103,13 +103,13 @@ def _extract_title(s: str) -> str:
     return (s[:idx] if idx != -1 else s).strip()
 
 
-def _fmt_time(dt: datetime) -> str:
+def _fmt_time(dt):
     hour = dt.hour % 12 or 12
     ampm = "AM" if dt.hour < 12 else "PM"
     return f"{hour}:{dt.minute:02d} {ampm}"
 
 
-def format_nws_notification(raw: str, *, year_default: int | None = None) -> str:
+def format_nws_notification(raw, *, year_default=None):
     s = _clean_one_line(raw)
     title = _extract_title(s)
     if year_default is None:
